@@ -1,0 +1,27 @@
+# IDEs & OS
+.idea/
+.vscode/
+*.swp
+*.DS_Store
+*.sln
+
+# Go
+/backend/bin/
+*.exe
+*.out
+
+# C++ / CMake
+/algorithm/build/
+*.o
+*.a
+
+# Python
+__pycache__/
+*.py[cod]
+venv/
+.env
+
+# ML & Data
+*.pdf
+*.onnx
+/data/
