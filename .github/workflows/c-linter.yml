@@ -25,11 +25,8 @@ jobs:
     - name: Static Analysis (clang-tidy)
       working-directory: ./algorithm
       run: |
-        FILES=$(find src tests -name "*.c")
-        for FILE in $FILES; do
-          echo "Checking $FILE..."
-          clang-tidy "$FILE" -- -I./include
-        done
+        clang-tidy src/algorithm.c -- -I./include
+        clang-tidy tests/test_algorithm.c -- -I./include
 
     - name: Build and Run Tests
       working-directory: ./algorithm
