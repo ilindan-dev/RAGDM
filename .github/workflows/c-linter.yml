@@ -1,0 +1,41 @@
+name: C Algorithm CI
+
+on:
+  push:
+    branches: [ "main", "feature/spaced-rep-algorithm" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install dependencies (CMake, Clang)
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake clang clang-format clang-tidy ninja-build
+
+    - name: Check Formatting (clang-format)
+      working-directory: ./algorithm
+      # --dry-run it will tell the linter not to fix the code, but to throw an error if the format is incorrect
+      run: clang-format --dry-run --Werror src/*.c include/*.h tests/*.c
+
+    - name: Static Analysis (clang-tidy)
+      working-directory: ./algorithm
+      # We check the files by passing the path to the header files directly
+      run: clang-tidy src/*.c tests/*.c -- -I./include
+
+    - name: Build tests
+      working-directory: ./algorithm
+      run: |
+        mkdir build
+        cd build
+        cmake -G Ninja ..
+        ninja
+
+    - name: Run Algorithm tests
+      working-directory: ./algorithm/build
+      run: ./test_algorithm
