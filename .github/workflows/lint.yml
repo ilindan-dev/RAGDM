@@ -10,6 +10,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Check if backend exists
+        run: |
+          if [ ! -d "./backend" ] || [ -z "$(ls -A ./backend 2>/dev/null)" ]; then
+            echo "No go files to lint, skipping."
+            exit 0
+          fi
+          
       - uses: actions/setup-go@v5
         with:
           go-version: '1.23'
