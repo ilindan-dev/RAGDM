@@ -9,33 +9,30 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v4
 
-    - name: Install dependencies (CMake, Clang)
+    - name: Install dependencies
       run: |
         sudo apt-get update
         sudo apt-get install -y cmake clang clang-format clang-tidy ninja-build
 
     - name: Check Formatting (clang-format)
       working-directory: ./algorithm
-      # --dry-run it will tell the linter not to fix the code, but to throw an error if the format is incorrect
-      run: clang-format --dry-run --Werror src/*.c include/*.h tests/*.c
+      run: |
+        # --dry-run it will tell the linter not to fix the code, but to throw an error if the format is incorrect
+        find . -name "*.c" -o -name "*.h" | xargs clang-format --dry-run --Werror
 
     - name: Static Analysis (clang-tidy)
       working-directory: ./algorithm
-      # We check the files by passing the path to the header files directly
-      run: clang-tidy src/*.c tests/*.c -- -I./include
+      run: |
+        # We check the files by passing the path to the header files directly
+        clang-tidy $(find src tests -name "*.c") -- -I./include
 
-    - name: Build tests
+    - name: Build and Run Tests
       working-directory: ./algorithm
       run: |
-        mkdir build
-        cd build
+        mkdir build && cd build
         cmake -G Ninja ..
         ninja
-
-    - name: Run Algorithm tests
-      working-directory: ./algorithm/build
-      run: ./test_algorithm
+        ./test_algorithm
