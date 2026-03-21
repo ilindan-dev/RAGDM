@@ -1,4 +1,3 @@
----
 Language: Cpp
 BasedOnStyle: Google
 
@@ -10,4 +9,3 @@ UseTab: Never
 PointerAlignment: Left
 
 SortIncludes: true
----
