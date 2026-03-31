@@ -1,0 +1,27 @@
+name: C/C++ Lint
+
+on:
+  pull_request:
+    branches: [ "dev", "main" ]
+    paths:
+      - 'algorithm/**'
+
+jobs:
+  lint-c:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install clang-tools and cmake
+        run: sudo apt-get update && sudo apt-get install -y clang-format clang-tidy cmake
+
+      - name: Generate compile_commands.json
+        run: cmake -B ./algorithm/build -S ./algorithm
+
+      - name: Check C/C++ formatting (clang-format)
+        run: |
+          find ./algorithm -type f \( -name "*.c" -o -name "*.cpp" -o -name "*.h" \) | xargs clang-format --Werror --dry-run
+
+      - name: Run C/C++ linter (clang-tidy)
+        run: |
+          find ./algorithm/src ./algorithm/tests -type f \( -name "*.c" -o -name "*.cpp" \) | xargs clang-tidy -p ./algorithm/build
