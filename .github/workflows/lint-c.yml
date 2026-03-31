@@ -20,7 +20,7 @@ jobs:
 
       - name: Check C/C++ formatting (clang-format)
         run: |
-          find ./algorithm -type f \( -name "*.c" -o -name "*.cpp" -o -name "*.h" \) | xargs clang-format --Werror --dry-run
+          find ./algorithm/src ./algorithm/include ./algorithm/tests -type f \( -name "*.c" -o -name "*.cpp" -o -name "*.h" \) | xargs clang-format --Werror --dry-run
 
       - name: Run C/C++ linter (clang-tidy)
         run: |
