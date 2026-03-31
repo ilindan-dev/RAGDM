@@ -1,10 +1,9 @@
-#include <assert.h>
-#include <stdio.h>
+#include <gtest/gtest.h>
 
 #include "algorithm.h"
 
-// auxiliary function
-CardState apply_result_to_card(ReviewResult res) {
+// Auxiliary function to apply ReviewResult to CardState
+CardState ApplyResultToCard(const ReviewResult& res) {
     CardState new_card;
     new_card.interval = res.next_interval;
     new_card.easiness = res.new_easiness;
@@ -12,59 +11,55 @@ CardState apply_result_to_card(ReviewResult res) {
     return new_card;
 }
 
-int main() {
-    printf("Starting algorithm tests...\n");
+// Test fixture (base class for tests) to avoid code duplication
+class AlgorithmTest : public ::testing::Test {
+   protected:
+    CardState default_card = {0, 2.5F, 0};
+};
 
-    // new card
-    CardState card = {0, 2.5F, 0};
-    ReviewResult result;
+TEST_F(AlgorithmTest, BadAnswer) {
+    const ReviewResult result = calculate_next_review(15.0F, default_card);
 
-    // test 1: bad answer
-    printf("Test 1: Bad answer (< 40%%)\n");
-    result = calculate_next_review(20.0F, card);
+    EXPECT_EQ(result.quality, 0);
+    EXPECT_EQ(result.next_interval, 1);
+    EXPECT_EQ(result.repetitions, 0);
+    EXPECT_LT(result.new_easiness, 2.5F);
+}
 
-    assert(result.quality == 0);
-    assert(result.next_interval == 1);
-    assert(result.repetitions == 0);
-    assert(result.new_easiness < 2.5F);
-    card = apply_result_to_card(result);
+TEST_F(AlgorithmTest, PerfectAnswerFirstTime) {
+    const ReviewResult result = calculate_next_review(95.0F, default_card);
 
-    // test 2 perfect answer
-    printf("Test 2: Perfect answer (1st time)\n");
-    result = calculate_next_review(95.0F, card);
+    EXPECT_EQ(result.quality, 5);
+    EXPECT_EQ(result.repetitions, 1);
+    EXPECT_EQ(result.next_interval, 1);
+    EXPECT_GT(result.new_easiness, default_card.easiness);
+}
 
-    assert(result.quality == 5);
-    assert(result.repetitions == 1);
-    assert(result.next_interval == 1);
-    assert(result.new_easiness > card.easiness);
-    card = apply_result_to_card(result);
+TEST_F(AlgorithmTest, PerfectAnswerSecondTime) {
+    const CardState card = ApplyResultToCard(calculate_next_review(95.0F, default_card));
+    const ReviewResult result = calculate_next_review(95.0F, card);
 
-    // test 3 perfect answer (2)
-    printf("Test 3: Perfect answer (2nd time)\n");
-    result = calculate_next_review(85.0F, card);
+    EXPECT_EQ(result.quality, 5);
+    EXPECT_EQ(result.repetitions, 2);
+    EXPECT_EQ(result.next_interval, 6);
+}
 
-    assert(result.quality == 5);
-    assert(result.repetitions == 2);
-    assert(result.next_interval == 6);
-    card = apply_result_to_card(result);
+TEST_F(AlgorithmTest, PerfectAnswerThirdTime) {
+    const CardState card1 = ApplyResultToCard(calculate_next_review(95.0F, default_card));
+    const CardState card2 = ApplyResultToCard(calculate_next_review(85.0F, card1));
+    const ReviewResult result = calculate_next_review(100.0F, card2);
 
-    // test 4 perfect answer (3)
-    printf("Test 4: Perfect answer (3rd time)\n");
-    result = calculate_next_review(100.0F, card);
+    EXPECT_EQ(result.quality, 5);
+    EXPECT_EQ(result.repetitions, 3);
+    EXPECT_GT(result.next_interval, 6);
+}
 
-    assert(result.quality == 5);
-    assert(result.repetitions == 3);
-    assert(result.next_interval > 6);
-    card = apply_result_to_card(result);
+TEST_F(AlgorithmTest, BadAnswerAfterStreak) {
+    const CardState card1 = ApplyResultToCard(calculate_next_review(95.0F, default_card));
+    const CardState card2 = ApplyResultToCard(calculate_next_review(85.0F, card1));
+    const ReviewResult result = calculate_next_review(10.0F, card2);
 
-    // test 5 bad answer
-    printf("Test 5: Bad answer after streak\n");
-    result = calculate_next_review(10.0F, card);
-
-    assert(result.quality == 0);
-    assert(result.repetitions == 0);
-    assert(result.next_interval == 1);
-
-    printf("SUCCESS! All assertions passed. Algorithm works perfectly!\n");
-    return 0;
+    EXPECT_EQ(result.quality, 0);
+    EXPECT_EQ(result.repetitions, 0);
+    EXPECT_EQ(result.next_interval, 1);
 }
