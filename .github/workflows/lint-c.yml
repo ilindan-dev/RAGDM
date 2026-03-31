@@ -1,4 +1,4 @@
-name: C/C++ Lint
+name: C/C++ CI
 
 on:
   pull_request:
@@ -7,7 +7,7 @@ on:
       - 'algorithm/**'
 
 jobs:
-  lint-c:
+  lint-and-test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -15,7 +15,7 @@ jobs:
       - name: Install clang-tools and cmake
         run: sudo apt-get update && sudo apt-get install -y clang-format clang-tidy cmake
 
-      - name: Generate compile_commands.json
+      - name: Configure CMake and generate compile_commands.json
         run: cmake -B ./algorithm/build -S ./algorithm
 
       - name: Check C/C++ formatting (clang-format)
@@ -25,3 +25,10 @@ jobs:
       - name: Run C/C++ linter (clang-tidy)
         run: |
           find ./algorithm/src ./algorithm/tests -type f \( -name "*.c" -o -name "*.cpp" \) | xargs clang-tidy -p ./algorithm/build
+
+      - name: Build C/C++ project
+        run: cmake --build ./algorithm/build
+
+      - name: Run tests (CTest)
+        working-directory: ./algorithm/build
+        run: ctest --output-on-failure
