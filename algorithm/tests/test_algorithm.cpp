@@ -4,8 +4,8 @@
 #include "algorithm.h"
 
 // auxiliary function
-struct CardState apply_result_to_card(struct ReviewResult res) {
-    struct CardState new_card;
+CardState apply_result_to_card(ReviewResult res) {
+    CardState new_card;
     new_card.interval = res.next_interval;
     new_card.easiness = res.new_easiness;
     new_card.repetitions = res.repetitions;
@@ -16,8 +16,8 @@ int main() {
     printf("Starting algorithm tests...\n");
 
     // new card
-    struct CardState card = {0, 2.5F, 0};
-    struct ReviewResult result;
+    CardState card = {0, 2.5F, 0};
+    ReviewResult result;
 
     // test 1: bad answer
     printf("Test 1: Bad answer (< 40%%)\n");
