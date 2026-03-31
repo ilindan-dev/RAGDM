@@ -1,0 +1,9 @@
+---
+InheritParentConfig: true
+
+Checks: >
+  -misra-*,
+  -cert-err58-cpp,
+  -cppcoreguidelines-owning-memory,
+  -cppcoreguidelines-pro-type-vararg
+...ы
