@@ -1,0 +1,21 @@
+name: Python Lint
+
+on:
+  pull_request:
+    branches: [ "dev", "main" ]
+    paths:
+      - 'parser/**'
+
+jobs:
+  lint-python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Ruff
+        run: pip install ruff
+
+      - name: Run Ruff check and format
+        run: |
+          ruff check ./parser
+          ruff format --check ./parser
