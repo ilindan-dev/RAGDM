@@ -1,4 +1,5 @@
 pdfplumber
 sentence-transformers
 onnxruntime
-psycopg2-binary
+ruff
+yake
