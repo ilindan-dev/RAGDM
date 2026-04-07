@@ -24,9 +24,9 @@ type DB struct {
 }
 
 type Embeder struct {
-	TokenizerPath   string `yaml:"tokenizer_path" env:"TOKENIZER_PATH"`
-	ONNXModelPath   string `yaml:"onnx_model_path" env:"ONNX_MODEL_PATH"`
-	ONNXLibraryPath string `yaml:"onnx_library_path" env:"ONNX_LIBRARY_PATH"`
+	TokenizerPath   string `yaml:"tokenizer_path" env:"TOKENIZER_PATH" env-default:"/app/models/tokenizer.json"`
+	ONNXModelPath   string `yaml:"onnx_model_path" env:"ONNX_MODEL_PATH" env-default:"/app/models/model.onnx"`
+	ONNXLibraryPath string `yaml:"onnx_library_path" env:"ONNX_LIBRARY_PATH" env-default:"/usr/local/lib/libonnxruntime.so"`
 }
 
 type Config struct {

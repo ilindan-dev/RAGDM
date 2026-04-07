@@ -48,6 +48,28 @@ func main() {
 	}
 	logger.Info().Msg("Migrations completed successfully")
 
+	seedPath := "/app/seed_cards.sql"
+	if _, err := os.Stat(seedPath); err == nil {
+		var count int
+		err := pool.QueryRow(ctx, "SELECT COUNT(*) FROM card_contents").Scan(&count)
+		if err == nil && count == 0 {
+			logger.Info().Msg("Seeding database with initial cards...")
+			sqlBytes, err := os.ReadFile(seedPath)
+			if err != nil {
+				logger.Error().Err(err).Msg("Failed to read seed file")
+			} else {
+				_, err = pool.Exec(ctx, string(sqlBytes))
+				if err != nil {
+					logger.Error().Err(err).Msg("Failed to execute seed_cards.sql")
+				} else {
+					logger.Info().Msg("Database seeded successfully!")
+				}
+			}
+		} else if count > 0 {
+			logger.Debug().Int("count", count).Msg("Database already contains data, skipping seed.")
+		}
+	}
+
 	queries := gen.New(pool)
 
 	cardRepo := repository.NewPgCardRepository(queries, &logger)

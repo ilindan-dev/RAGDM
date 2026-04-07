@@ -20,6 +20,10 @@ RUN cmake -B /app/algorithm/build -S /app/algorithm && \
 
 #2. Build the Go binary (enable CGO)
 WORKDIR /app/backend
+RUN apt-get update && \
+    apt-get install -y ca-certificates wget tar && \
+    wget -qO- https://github.com/daulet/tokenizers/releases/download/v1.27.0/libtokenizers.linux-amd64.tar.gz | tar xvz -C /usr/lib/
+
 RUN CGO_ENABLED=1 GOOS=linux go build -ldflags="-s -w" -o /app/bin/server ./cmd/server/main.go
 
 # Stage 2: Runner
@@ -30,10 +34,17 @@ RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/
 
 WORKDIR /root/
 
-RUN wget -qO- https://github.com/microsoft/onnxruntime/releases/download/v1.17.1/onnxruntime-linux-x64-1.17.1.tgz | \
-    tar xvz -C /usr/local/lib/ --strip-components=2 onnxruntime-linux-x64-1.17.1/lib/libonnxruntime.so.1.17.1 && \
-    ln -s /usr/local/lib/libonnxruntime.so.1.17.1 /usr/local/lib/libonnxruntime.so && \
-    ldconfig
+# 1. Download and copy the ONNX libraries to /usr/local/lib/
+RUN apt-get update && \
+    apt-get install -y ca-certificates wget tar && \
+    wget -qO onnxruntime.tgz https://github.com/microsoft/onnxruntime/releases/download/v1.20.1/onnxruntime-linux-x64-1.20.1.tgz && \
+    tar -xzf onnxruntime.tgz && \
+    cp -Pr onnxruntime-linux-x64-1.20.1/lib/* /usr/local/lib/ && \
+    ldconfig && \
+    rm -rf onnxruntime.tgz onnxruntime-linux-x64-1.20.1
+
+# 2. Add this right after the RUN block to guarantee the app finds the .so file
+ENV LD_LIBRARY_PATH=/usr/local/lib:${LD_LIBRARY_PATH}
 
 COPY --from=builder /app/bin/server .
 COPY --from=builder /app/algorithm/build/libspaced_rep.a /usr/local/lib/

@@ -11,7 +11,7 @@ require (
 	github.com/pgvector/pgvector-go v0.3.0
 	github.com/pressly/goose/v3 v3.27.0
 	github.com/rs/zerolog v1.35.0
-	github.com/yalue/onnxruntime_go v1.27.0
+	github.com/yalue/onnxruntime_go v1.11.0
 )
 
 require (
