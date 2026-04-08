@@ -1,10 +1,41 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <title>RAG Discrete Math</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RAGDM</title>
+  <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
-<h1>Тренажер по Дискретной Математике</h1>
+  <div class="app">
+    <header class="header">
+      <h1>RAG по дискретной математике</h1>
+      <p class="subtitle">Локальный сервис поиска и тренировки</p>
+    </header>
+
+    <nav class="tabs">
+      <button class="tab-button active" data-tab="search">Поиск по учебнику</button>
+      <button class="tab-button" data-tab="trainer">Тренажёр</button>
+    </nav>
+
+    <main class="main-content">
+      <section id="search-tab" class="tab-content active">
+        <div class="card">
+          <h2>Поиск по учебнику</h2>
+          <p>Здесь позже будет интерфейс RAG-чата.</p>
+        </div>
+      </section>
+
+      <section id="trainer-tab" class="tab-content">
+        <div class="card">
+          <h2>Тренажёр</h2>
+          <p>Здесь позже будет интерфейс режима тренировки.</p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/main.js"></script>
 </body>
 </html>
