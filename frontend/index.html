@@ -39,7 +39,38 @@
       <section id="trainer-tab" class="tab-content">
         <div class="card">
           <h2>Тренажёр</h2>
-          <p>Будет позже</p>
+
+          <div class="question-card">
+            <div class="question-label">Вопрос системы</div>
+            <div id="trainer-question" class="question-text">
+              Что называется полным графом?
+            </div>
+          </div>
+
+          <div class="input-block">
+            <textarea
+              id="trainer-answer"
+              placeholder="Введите ваш ответ..."
+            ></textarea>
+            <button id="check-answer-btn">Проверить</button>
+          </div>
+
+          <div id="trainer-result" class="result-block hidden">
+            <div id="result-status" class="result-status result-status-partial">
+              Частично верно
+            </div>
+
+            <div class="result-percent">
+              Процент совпадения: <span id="result-percent">0%</span>
+            </div>
+
+            <div class="result-explanation-title">Пояснение</div>
+            <div id="result-explanation" class="result-explanation"></div>
+          </div>
+
+          <div class="trainer-actions">
+            <button id="next-question-btn">Далее</button>
+          </div>
         </div>
       </section>
     </main>

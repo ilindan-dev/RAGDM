@@ -1,6 +1,7 @@
 document.addEventListener("DOMContentLoaded", () => {
   initTabs();
   initChat();
+  initTrainer();
 });
 
 function initTabs() {
@@ -45,7 +46,9 @@ function addMessage(chat, text, type, meta = null) {
   const div = document.createElement("div");
   div.className = "message " + type;
 
-  div.innerText = text;
+  const textBlock = document.createElement("div");
+  textBlock.innerText = text;
+  div.appendChild(textBlock);
 
   if (meta) {
     const m = document.createElement("div");
@@ -67,4 +70,79 @@ function fakeApi(q) {
       });
     }, 1000);
   });
+}
+
+function initTrainer() {
+  const checkBtn = document.getElementById("check-answer-btn");
+  const nextBtn = document.getElementById("next-question-btn");
+  const answerInput = document.getElementById("trainer-answer");
+  const questionBlock = document.getElementById("trainer-question");
+  const resultBlock = document.getElementById("trainer-result");
+  const statusBlock = document.getElementById("result-status");
+  const percentBlock = document.getElementById("result-percent");
+  const explanationBlock = document.getElementById("result-explanation");
+
+  const questions = [
+    {
+      question: "Что называется полным графом?",
+      result: {
+        status: "partial",
+        percent: 74,
+        explanation:
+          "Полный граф — это граф, в котором каждая пара различных вершин соединена ребром."
+      }
+    },
+    {
+      question: "Что называется путём в графе?",
+      result: {
+        status: "correct",
+        percent: 93,
+        explanation:
+          "Путь — это последовательность вершин, в которой каждые две соседние вершины соединены ребром."
+      }
+    },
+    {
+      question: "Что называется деревом?",
+      result: {
+        status: "wrong",
+        percent: 28,
+        explanation:
+          "Дерево — это связный граф без циклов."
+      }
+    }
+  ];
+
+  let currentIndex = 0;
+
+  checkBtn.onclick = () => {
+    const answer = answerInput.value.trim();
+    if (!answer) return;
+
+    const current = questions[currentIndex].result;
+
+    resultBlock.classList.remove("hidden");
+    percentBlock.textContent = `${current.percent}%`;
+    explanationBlock.textContent = current.explanation;
+
+    statusBlock.className = "result-status";
+
+    if (current.status === "correct") {
+      statusBlock.classList.add("result-status-correct");
+      statusBlock.textContent = "Верно";
+    } else if (current.status === "wrong") {
+      statusBlock.classList.add("result-status-wrong");
+      statusBlock.textContent = "Неверно";
+    } else {
+      statusBlock.classList.add("result-status-partial");
+      statusBlock.textContent = "Частично верно";
+    }
+  };
+
+  nextBtn.onclick = () => {
+    currentIndex = (currentIndex + 1) % questions.length;
+
+    questionBlock.textContent = questions[currentIndex].question;
+    answerInput.value = "";
+    resultBlock.classList.add("hidden");
+  };
 }
