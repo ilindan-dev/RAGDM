@@ -18,18 +18,28 @@
       <button class="tab-button" data-tab="trainer">Тренажёр</button>
     </nav>
 
-    <main class="main-content">
+    <main>
+      <!-- SEARCH -->
       <section id="search-tab" class="tab-content active">
         <div class="card">
-          <h2>Поиск по учебнику</h2>
-          <p>Здесь позже будет интерфейс RAG-чата.</p>
+          <h2>Сервис поиска</h2>
+
+          <div id="chat" class="chat"></div>
+
+          <div id="loader" class="loader hidden">Поиск...</div>
+
+          <div class="input-block">
+            <textarea id="input" placeholder="Введите вопрос..."></textarea>
+            <button id="send">Отправить</button>
+          </div>
         </div>
       </section>
 
+      <!-- TRAINER -->
       <section id="trainer-tab" class="tab-content">
         <div class="card">
           <h2>Тренажёр</h2>
-          <p>Здесь позже будет интерфейс режима тренировки.</p>
+          <p>Будет позже</p>
         </div>
       </section>
     </main>
