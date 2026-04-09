@@ -39,13 +39,22 @@ def filter_text(text: str) -> str:
     return text.strip()
 
 
-def split_into_blocks(text):
+def split_into_blocks(text: str) -> List[Dict[str, str]]:
+    """Split text into logical blocks by type.
+    
+    Identifies and separates text into blocks marked as definitions, theorems,
+    or general content based on Russian language keywords.
+    
+    Args:
+        text: Cleaned text to split into blocks.
+        
+    Returns:
+        List of dictionaries with 'type' and 'text' keys. Types are:
+        'definition', 'theorem', or 'general'.
     """
-    Разбивает текст на логические блоки (Определения, Теоремы и обычный текст).
-    """
-    blocks = []
+    blocks: List[Dict[str, str]] = []
     current_type = "general"
-    current_text = []
+    current_text: List[str] = []
 
     sentences = re.split(r"(?<=[.!?])\s+", text)
 

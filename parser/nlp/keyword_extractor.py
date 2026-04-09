@@ -11,7 +11,7 @@ RU_STOP_WORDS: Set[str] = {
     'выше', 'ниже', 'раньше', 'позже', 'всегда', 'никогда', 'часто', 'редко',
     'который', 'какой', 'какая', 'какое', 'кто', 'где', 'когда', 'почему', 'зачем',
     'я', 'ты', 'он', 'она', 'оно', 'мы', 'вы', 'они', 'ме', 'те', 'же', 'ее', 'его',
-    'более', 'менее', 'очень', 'же', 'же',
+    'более', 'менее', 'очень',
 }
 
 
@@ -46,7 +46,7 @@ def extract_keywords(text: str, top_n: int = 20) -> List[Tuple[str, str]]:
     filtered_keywords: List[Tuple[str, str]] = []
     seen_normalized: Set[str] = set()
     
-    for kw, score in keywords_raw:
+    for kw, _score in keywords_raw:
         kw_original = kw.strip()  # Preserve original word form
         kw_normalized = kw_original.lower()  # Normalize for filtering
         

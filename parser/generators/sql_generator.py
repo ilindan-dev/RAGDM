@@ -33,8 +33,8 @@ def format_insert_values_rows(item: Dict[str, Any]) -> List[str]:
     rows = []
     
     # Iterate through terms and create a card for each
-    for i, (term, definition, embedding) in enumerate(
-        zip(item["terms"], item["definitions"], item["terms_embeddings"])
+    for term, definition, embedding in zip(
+        item["terms"], item["definitions"], item["terms_embeddings"], strict=False
     ):
         # Format embedding as PostgreSQL vector
         embedding_str = "[" + ",".join(map(str, embedding)) + "]"
@@ -92,7 +92,9 @@ def generate_sql(
         "-- Tracks spaced repetition metrics for each card",
         "CREATE TABLE IF NOT EXISTS card_progress (",
         "    id             UUID PRIMARY KEY DEFAULT uuid_generate_v4(),",
-        "    card_id        UUID NOT NULL UNIQUE REFERENCES card_contents (id) ON DELETE CASCADE,",
+        "    card_id        UUID NOT NULL UNIQUE",
+        "                   REFERENCES card_contents (id)",
+        "                   ON DELETE CASCADE,",
         "    interval       BIGINT NOT NULL DEFAULT 0,",
         "    easiness       REAL NOT NULL DEFAULT 2.5,",
         "    repetitions    INT NOT NULL DEFAULT 0,",
@@ -100,14 +102,16 @@ def generate_sql(
         "    updated_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()",
         ");",
         "",
-        "CREATE INDEX IF NOT EXISTS idx_progress_next_review ON card_progress (next_review_at);",
+        "CREATE INDEX IF NOT EXISTS idx_progress_next_review",
+        "ON card_progress (next_review_at);",
         "",
         f"-- Data: each INSERT contains up to {INSERT_VALUES_PER_STATEMENT} rows.",
         "",
     ]
 
     insert_header = (
-        "INSERT INTO card_contents (front_text, back_text, embedding, source_info) VALUES\n"
+        "INSERT INTO card_contents "
+        "(front_text, back_text, embedding, source_info) VALUES\n"
     )
 
     with open(output_file, "w", encoding="utf-8") as f:
