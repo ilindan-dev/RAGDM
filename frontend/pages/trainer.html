@@ -1,0 +1,124 @@
+<script src="/js/api.js"></script>
+<script>
+    // Элементы DOM для тренажера
+    const questionContainer = document.getElementById('question-container');
+    const answerForm = document.getElementById('answer-form');
+    const answerInput = document.getElementById('answer-input');
+    const nextQuestionBtn = document.getElementById('next-question-btn');
+    const feedbackDiv = document.getElementById('feedback');
+    const questionText = document.getElementById('question-text');
+    
+    let currentQuestion = null;
+
+    // Функция загрузки следующего вопроса
+    async function loadNextQuestion() {
+        if (questionContainer) {
+            questionContainer.style.opacity = '0.5';
+        }
+        
+        if (feedbackDiv) {
+            feedbackDiv.innerHTML = '';
+        }
+        
+        if (answerInput) {
+            answerInput.value = '';
+            answerInput.disabled = true;
+        }
+
+        try {
+            // запрос к бэкенду
+            currentQuestion = await getNextQuestion();
+            
+            if (currentQuestion && questionText) {
+                questionText.textContent = currentQuestion.question_text || currentQuestion.text;
+                
+                if (answerInput) {
+                    answerInput.disabled = false;
+                    answerInput.focus();
+                }
+            }
+        } catch (error) {
+            console.error('Failed to load question:', error);
+            if (questionText) {
+                questionText.textContent = error.message === 'Нет карточек для повторения' 
+                    ? 'Поздравляем! Все карточки повторены.' 
+                    : 'Ошибка загрузки вопроса. Попробуйте позже.';
+            }
+            if (answerInput) {
+                answerInput.disabled = true;
+            }
+            currentQuestion = null;
+        } finally {
+            if (questionContainer) {
+                questionContainer.style.opacity = '1';
+            }
+        }
+    }
+
+    // Отправка ответа
+    async function handleSubmitAnswer(event) {
+        event.preventDefault();
+        
+        if (!currentQuestion) {
+            alert('Нет активного вопроса. Загрузите следующий вопрос.');
+            return;
+        }
+        
+        const answer = answerInput ? answerInput.value.trim() : '';
+        if (!answer) {
+            alert('Пожалуйста, введите ответ');
+            return;
+        }
+        
+        // Блокируем форму на время отправки
+        const submitBtn = answerForm.querySelector('button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+        }
+        
+        try {
+            // Реальный HTTP-запрос к бэкенду
+            const result = await submitAnswer(currentQuestion.id, answer);
+            
+            // Отображаем обратную связь
+            if (feedbackDiv) {
+                const isCorrect = result.is_correct || result.correct;
+                feedbackDiv.innerHTML = `
+                    <div class="feedback ${isCorrect ? 'correct' : 'incorrect'}">
+                        <strong>${isCorrect ? 'Верно!' : 'Неверно!'}</strong>
+                        <p>${result.message || (isCorrect ? 'Отличная работа!' : `Правильный ответ: ${result.correct_answer || 'не указан'}`)}</p>
+                    </div>
+                `;
+            }
+            
+            // Автоматически загружаем следующий вопрос через 2 секунды
+            setTimeout(() => {
+                loadNextQuestion();
+            }, 2000);
+            
+        } catch (error) {
+            console.error('Failed to submit answer:', error);
+            if (feedbackDiv) {
+                feedbackDiv.innerHTML = '<div class="error">Ошибка отправки ответа. Попробуйте еще раз.</div>';
+            }
+        } finally {
+            if (submitBtn) {
+                submitBtn.disabled = false;
+            }
+        }
+    }
+
+    // Инициализация тренажера
+    if (answerForm) {
+        answerForm.addEventListener('submit', handleSubmitAnswer);
+    }
+    
+    if (nextQuestionBtn) {
+        nextQuestionBtn.addEventListener('click', loadNextQuestion);
+    }
+    
+    // Загружаем первый вопрос при загрузке страницы
+    document.addEventListener('DOMContentLoaded', () => {
+        loadNextQuestion();
+    });
+</script>
