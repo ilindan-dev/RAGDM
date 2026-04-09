@@ -1,18 +1,18 @@
-
 """Text cleaning and block splitting module."""
+
 from typing import List, Dict
 import re
 
 
 def filter_text(text: str) -> str:
     """Remove noise and service information from text.
-    
+
     Removes algorithm blocks, figure/table references, page numbers, URLs,
     email addresses, excess whitespace, and hanging punctuation.
-    
+
     Args:
         text: Raw text to clean.
-        
+
     Returns:
         Cleaned text with all filtered elements removed.
     """
@@ -41,13 +41,13 @@ def filter_text(text: str) -> str:
 
 def split_into_blocks(text: str) -> List[Dict[str, str]]:
     """Split text into logical blocks by type.
-    
+
     Identifies and separates text into blocks marked as definitions, theorems,
     or general content based on Russian language keywords.
-    
+
     Args:
         text: Cleaned text to split into blocks.
-        
+
     Returns:
         List of dictionaries with 'type' and 'text' keys. Types are:
         'definition', 'theorem', or 'general'.

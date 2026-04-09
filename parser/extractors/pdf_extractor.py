@@ -1,4 +1,5 @@
 """PDF text extraction module."""
+
 from typing import Generator, Dict, Optional
 import pdfplumber
 
@@ -7,16 +8,16 @@ def parse_hall_text(
     pdf_path: str, start_page: int = 1, end_page: Optional[int] = None
 ) -> Generator[Dict[str, object], None, None]:
     """Extract text from PDF using multiple fallback methods.
-    
+
     Attempts to extract text from each page using pdfplumber. If initial extraction
     fails or produces insufficient text, falls back to adjusted tolerance settings
     and table extraction.
-    
+
     Args:
         pdf_path: Path to the PDF file.
         start_page: Starting page number (1-indexed). Defaults to 1.
         end_page: Ending page number (inclusive). If None, processes all pages.
-        
+
     Yields:
         Dictionary containing 'page' (int) and 'text' (str) keys.
         Only yields pages with extracted text length > 10 characters.

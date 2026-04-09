@@ -1,4 +1,5 @@
 """Entry point for RAG document processing pipeline."""
+
 from pathlib import Path
 from typing import Generator, Dict, Any
 from sentence_transformers import SentenceTransformer
