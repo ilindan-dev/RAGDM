@@ -74,7 +74,8 @@ func main() {
 
 	cardRepo := repository.NewPgCardRepository(queries, &logger)
 	algoEngine := algorithm.NewSM2Engine()
-	embeder, err := tokenizer.NewOnnxEmbedder(cfg.TokenizerPath, cfg.ONNXModelPath, cfg.ONNXLibraryPath, &logger)
+	embeder, err := tokenizer.NewOnnxEmbedder(cfg.Embeder.TokenizerPath, cfg.Embeder.ONNXModelPath,
+		cfg.Embeder.ONNXLibraryPath, &logger)
 	if err != nil {
 		logger.Fatal().Err(err).Msg("Failed to create embedded tokenizer")
 	}
@@ -85,7 +86,7 @@ func main() {
 
 	srv := &nhttp.Server{
 		Addr:        ":" + cfg.HTTP.Port,
-		Handler:     cardHandler.InitRoutes(cfg.GinMode),
+		Handler:     cardHandler.InitRoutes(cfg.HTTP.GinMode),
 		ReadTimeout: cfg.HTTP.Timeout,
 	}
 
