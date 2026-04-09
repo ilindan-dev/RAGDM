@@ -1,14 +1,18 @@
+"""Entry point for RAG document processing pipeline."""
 from pathlib import Path
+from typing import Generator, Dict, Any
 from sentence_transformers import SentenceTransformer
-from parser import prepare_text_for_rag, generate_sql
+from parser import prepare_text_for_rag
+from generators import generate_sql
 
 
-def main():
+def main() -> None:
+    """Initialize model and execute RAG pipeline on all PDF files in data directory."""
     print(
-        "⏳ Инициализация модели "
+        "Initializing model "
         "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2..."
     )
-    # Сохраняем модель локально в /parser/models/, как сказано в ТЗ:
+    # Cache models locally in /parser/models/
     models_dir = Path(__file__).parent / "models"
     models_dir.mkdir(parents=True, exist_ok=True)
     try:
@@ -17,28 +21,29 @@ def main():
             cache_folder=str(models_dir),
         )
     except Exception as e:
-        print(f"❌ Ошибка при загрузке модели: {e}")
+        print(f"Error loading model: {e}")
         return
 
     data_dir = Path(__file__).parent.parent / "data"
     if not data_dir.exists():
         print(
-            f"⚠️ Папка {data_dir} не найдена. "
-            "Создаю пустую папку (положите в нее PDF-файлы)."
+            f"Data directory {data_dir} not found. "
+            "Creating empty directory (add PDF files to it)."
         )
         data_dir.mkdir(parents=True, exist_ok=True)
 
     pdf_files = list(data_dir.glob("*.pdf"))
     if not pdf_files:
-        print(f"⚠️ В папке {data_dir} нет PDF файлов.")
+        print(f"No PDF files found in {data_dir}.")
         return
 
-    print(f"🔍 Найдено {len(pdf_files)} PDF файлов для обработки.")
+    print(f"Found {len(pdf_files)} PDF files to process.")
 
-    def all_pdfs_generator():
+    def all_pdfs_generator() -> Generator[Dict[str, Any], None, None]:
+        """Generate processed data from all PDF files."""
         for pdf_path in pdf_files:
-            print(f"📖 Читаем документ: {pdf_path.name}")
-            # Извлекаем title / chapter_name из имени файла (к примеру)
+            print(f"Processing document: {pdf_path.name}")
+            # Extract chapter name from filename
             chapter_name = pdf_path.stem
             yield from prepare_text_for_rag(pdf_path, model, chapter_name=chapter_name)
 

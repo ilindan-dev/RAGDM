@@ -3,3 +3,4 @@ sentence-transformers
 onnxruntime
 ruff
 yake
+psycopg2-binary
