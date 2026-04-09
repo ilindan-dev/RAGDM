@@ -1,6 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
   initTabs();
-  initChat();
+  initSearch();
   initTrainer();
 });
 
@@ -9,140 +9,197 @@ function initTabs() {
   const tabs = document.querySelectorAll(".tab-content");
 
   buttons.forEach((btn) => {
-    btn.onclick = () => {
+    btn.addEventListener('click', () => {
       buttons.forEach((b) => b.classList.remove("active"));
       tabs.forEach((t) => t.classList.remove("active"));
 
       btn.classList.add("active");
-      document.getElementById(btn.dataset.tab + "-tab").classList.add("active");
-    };
+      const tabId = btn.dataset.tab + "-tab";
+      document.getElementById(tabId).classList.add("active");
+    });
   });
 }
 
-function initChat() {
-  const input = document.getElementById("input");
-  const btn = document.getElementById("send");
-  const chat = document.getElementById("chat");
-  const loader = document.getElementById("loader");
+// Инициализация поиска
+function initSearch() {
+  const searchForm = document.getElementById('search-form');
+  const searchInput = document.getElementById('search-input');
+  const searchResults = document.getElementById('search-results');
+  const loadingIndicator = document.getElementById('loading-indicator');
 
-  btn.onclick = async () => {
-    const text = input.value.trim();
-    if (!text) return;
+  if (!searchForm) return;
 
-    addMessage(chat, text, "user");
-    input.value = "";
+  searchForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    
+    const query = searchInput.value.trim();
+    if (!query) {
+      alert('Пожалуйста, введите поисковый запрос');
+      return;
+    }
 
-    loader.classList.remove("hidden");
+    if (loadingIndicator) {
+      loadingIndicator.style.display = 'block';
+    }
+    
+    if (searchResults) {
+      searchResults.innerHTML = '';
+    }
 
-    const result = await fakeApi(text);
-
-    loader.classList.add("hidden");
-
-    addMessage(chat, result.answer, "bot", result.meta);
-  };
+    try {
+      const result = await searchRAG(query);
+      renderSearchResults(result);
+    } catch (error) {
+      console.error('Search failed:', error);
+      if (searchResults) {
+        searchResults.innerHTML = '<div class="error-message">Ошибка поиска. Попробуйте позже.</div>';
+      }
+    } finally {
+      if (loadingIndicator) {
+        loadingIndicator.style.display = 'none';
+      }
+    }
+  });
 }
 
-function addMessage(chat, text, type, meta = null) {
-  const div = document.createElement("div");
-  div.className = "message " + type;
+function renderSearchResults(data) {
+  const resultsContainer = document.getElementById('search-results');
+  if (!resultsContainer) return;
 
-  const textBlock = document.createElement("div");
-  textBlock.innerText = text;
-  div.appendChild(textBlock);
-
-  if (meta) {
-    const m = document.createElement("div");
-    m.className = "meta";
-    m.innerText = meta;
-    div.appendChild(m);
+  if (!data || !data.found_text) {
+    resultsContainer.innerHTML = '<div class="no-results">Ничего не найдено</div>';
+    return;
   }
 
-  chat.appendChild(div);
-  chat.scrollTop = chat.scrollHeight;
+  const resultCard = document.createElement('div');
+  resultCard.className = 'result-card';
+  
+  const title = document.createElement('h3');
+  title.textContent = 'Найденный текст:';
+  
+  const content = document.createElement('p');
+  content.textContent = data.found_text;
+  
+  const meta = document.createElement('small');
+  meta.textContent = `Источник: ${data.source || 'База знаний'}`;
+  
+  resultCard.appendChild(title);
+  resultCard.appendChild(content);
+  resultCard.appendChild(meta);
+  
+  resultsContainer.innerHTML = '';
+  resultsContainer.appendChild(resultCard);
 }
 
-function fakeApi(q) {
-  return new Promise((res) => {
-    setTimeout(() => {
-      res({
-        answer: "Дерево — связный граф без циклов.",
-        meta: "Глава 2 · граф, дерево"
-      });
-    }, 1000);
-  });
-}
+// Инициализация тренажёра
+let currentQuestion = null;
 
 function initTrainer() {
-  const checkBtn = document.getElementById("check-answer-btn");
-  const nextBtn = document.getElementById("next-question-btn");
-  const answerInput = document.getElementById("trainer-answer");
-  const questionBlock = document.getElementById("trainer-question");
-  const resultBlock = document.getElementById("trainer-result");
-  const statusBlock = document.getElementById("result-status");
-  const percentBlock = document.getElementById("result-percent");
-  const explanationBlock = document.getElementById("result-explanation");
+  const questionContainer = document.getElementById('question-container');
+  const answerForm = document.getElementById('answer-form');
+  const answerInput = document.getElementById('answer-input');
+  const nextQuestionBtn = document.getElementById('next-question-btn');
+  const feedbackDiv = document.getElementById('feedback');
+  const questionText = document.getElementById('question-text');
 
-  const questions = [
-    {
-      question: "Что называется полным графом?",
-      result: {
-        status: "partial",
-        percent: 74,
-        explanation:
-          "Полный граф — это граф, в котором каждая пара различных вершин соединена ребром."
+  if (!answerForm) return;
+
+  async function loadNextQuestion() {
+    if (questionContainer) {
+      questionContainer.style.opacity = '0.5';
+    }
+    
+    if (feedbackDiv) {
+      feedbackDiv.innerHTML = '';
+    }
+    
+    if (answerInput) {
+      answerInput.value = '';
+      answerInput.disabled = true;
+    }
+
+    try {
+      currentQuestion = await getNextQuestion();
+      
+      if (currentQuestion && questionText) {
+        questionText.textContent = currentQuestion.question_text || currentQuestion.text;
+        
+        if (answerInput) {
+          answerInput.disabled = false;
+          answerInput.focus();
+        }
       }
-    },
-    {
-      question: "Что называется путём в графе?",
-      result: {
-        status: "correct",
-        percent: 93,
-        explanation:
-          "Путь — это последовательность вершин, в которой каждые две соседние вершины соединены ребром."
+    } catch (error) {
+      console.error('Failed to load question:', error);
+      if (questionText) {
+        questionText.textContent = error.message === 'Нет карточек для повторения' 
+          ? 'Поздравляем! Все карточки повторены.' 
+          : 'Ошибка загрузки вопроса. Попробуйте позже.';
       }
-    },
-    {
-      question: "Что называется деревом?",
-      result: {
-        status: "wrong",
-        percent: 28,
-        explanation:
-          "Дерево — это связный граф без циклов."
+      if (answerInput) {
+        answerInput.disabled = true;
+      }
+      currentQuestion = null;
+    } finally {
+      if (questionContainer) {
+        questionContainer.style.opacity = '1';
       }
     }
-  ];
+  }
 
-  let currentIndex = 0;
-
-  checkBtn.onclick = () => {
-    const answer = answerInput.value.trim();
-    if (!answer) return;
-
-    const current = questions[currentIndex].result;
-
-    resultBlock.classList.remove("hidden");
-    percentBlock.textContent = `${current.percent}%`;
-    explanationBlock.textContent = current.explanation;
-
-    statusBlock.className = "result-status";
-
-    if (current.status === "correct") {
-      statusBlock.classList.add("result-status-correct");
-      statusBlock.textContent = "Верно";
-    } else if (current.status === "wrong") {
-      statusBlock.classList.add("result-status-wrong");
-      statusBlock.textContent = "Неверно";
-    } else {
-      statusBlock.classList.add("result-status-partial");
-      statusBlock.textContent = "Частично верно";
+  async function handleSubmitAnswer(event) {
+    event.preventDefault();
+    
+    if (!currentQuestion) {
+      alert('Нет активного вопроса. Загрузите следующий вопрос.');
+      return;
     }
-  };
+    
+    const answer = answerInput ? answerInput.value.trim() : '';
+    if (!answer) {
+      alert('Пожалуйста, введите ответ');
+      return;
+    }
+    
+    const submitBtn = answerForm.querySelector('button[type="submit"]');
+    if (submitBtn) {
+      submitBtn.disabled = true;
+    }
+    
+    try {
+      const result = await submitAnswer(currentQuestion.id, answer);
+      
+      if (feedbackDiv) {
+        const isCorrect = result.is_correct || result.correct;
+        feedbackDiv.innerHTML = `
+          <div class="feedback ${isCorrect ? 'correct' : 'incorrect'}">
+            <strong>${isCorrect ? 'Верно!' : 'Неверно!'}</strong>
+            <p>${result.message || (isCorrect ? 'Отличная работа!' : `Правильный ответ: ${result.correct_answer || 'не указан'}`)}</p>
+          </div>
+        `;
+      }
+      
+      setTimeout(() => {
+        loadNextQuestion();
+      }, 2000);
+      
+    } catch (error) {
+      console.error('Failed to submit answer:', error);
+      if (feedbackDiv) {
+        feedbackDiv.innerHTML = '<div class="error">Ошибка отправки ответа. Попробуйте еще раз.</div>';
+      }
+    } finally {
+      if (submitBtn) {
+        submitBtn.disabled = false;
+      }
+    }
+  }
 
-  nextBtn.onclick = () => {
-    currentIndex = (currentIndex + 1) % questions.length;
-
-    questionBlock.textContent = questions[currentIndex].question;
-    answerInput.value = "";
-    resultBlock.classList.add("hidden");
-  };
+  answerForm.addEventListener('submit', handleSubmitAnswer);
+  
+  if (nextQuestionBtn) {
+    nextQuestionBtn.addEventListener('click', loadNextQuestion);
+  }
+  
+  loadNextQuestion();
 }
