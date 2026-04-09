@@ -31,6 +31,8 @@ func (h *CardHandler) InitRoutes(ginMode string) *gin.Engine {
 	router := gin.New()
 	router.Use(gin.Recovery())
 
+	router.StaticFile("/", "./frontend/index.html")
+
 	card := router.Group("/api/v1/cards")
 	card.GET("/review", h.GetReviewBatch)
 	card.POST("/:id/answer", h.SubmitAnswer)

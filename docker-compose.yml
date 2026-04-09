@@ -45,6 +45,7 @@ services:
       # Mount ML models from host to container to avoid bloating the image
       - ./models:/app/models
       - ./parser/seed_cards.sql:/app/seed_cards.sql:ro
+      - ./frontend:/root/frontend:ro
 
 volumes:
   pgdata:
