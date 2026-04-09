@@ -1,0 +1,78 @@
+<script src="/js/api.js"></script>
+<script>
+    // Элементы DOM для поиска
+    const searchForm = document.getElementById('search-form');
+    const searchInput = document.getElementById('search-input');
+    const searchResults = document.getElementById('search-results');
+    const loadingIndicator = document.getElementById('loading-indicator');
+
+    if (searchForm) {
+        searchForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            
+            const query = searchInput.value.trim();
+            if (!query) {
+                alert('Пожалуйста, введите поисковый запрос');
+                return;
+            }
+
+            // Показать индикатор загрузки
+            if (loadingIndicator) {
+                loadingIndicator.style.display = 'block';
+            }
+            
+            // Очистить предыдущие результаты
+            if (searchResults) {
+                searchResults.innerHTML = '';
+            }
+
+            try {
+                // Отправляем реальный HTTP-запрос (видно во вкладке Network)
+                const result = await searchRAG(query);
+                
+                // Рендерим результаты в DOM
+                renderSearchResults(result);
+                
+            } catch (error) {
+                console.error('Search failed:', error);
+                if (searchResults) {
+                    searchResults.innerHTML = '<div class="error-message">Ошибка поиска. Попробуйте позже.</div>';
+                }
+            } finally {
+                if (loadingIndicator) {
+                    loadingIndicator.style.display = 'none';
+                }
+            }
+        });
+    }
+
+    function renderSearchResults(data) {
+        const resultsContainer = document.getElementById('search-results');
+        if (!resultsContainer) return;
+
+        if (!data || !data.found_text) {
+            resultsContainer.innerHTML = '<div class="no-results">Ничего не найдено</div>';
+            return;
+        }
+
+        // Создаем DOM-элементы для отображения результатов
+        const resultCard = document.createElement('div');
+        resultCard.className = 'result-card';
+        
+        const title = document.createElement('h3');
+        title.textContent = 'Найденный текст:';
+        
+        const content = document.createElement('p');
+        content.textContent = data.found_text;
+        
+        const meta = document.createElement('small');
+        meta.textContent = `Источник: ${data.source || 'База знаний'}`;
+        
+        resultCard.appendChild(title);
+        resultCard.appendChild(content);
+        resultCard.appendChild(meta);
+        
+        resultsContainer.innerHTML = ''; // Очищаем
+        resultsContainer.appendChild(resultCard);
+    }
+</script>
