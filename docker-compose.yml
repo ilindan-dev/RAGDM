@@ -1,39 +1,51 @@
-version: '3.8'
-
 services:
-  # Data base
+  # Database Service (PostgreSQL + pgvector)
   db:
-    image: ankane/pgvector:latest
+    image: pgvector/pgvector:pg16
     container_name: ragdm_db
+    restart: unless-stopped
     environment:
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${DB_NAME:-ragdm}
     ports:
-      - "${DB_PORT}:5432"
+      - ${DB_PORT:-5432}:5432
     volumes:
       - pgdata:/var/lib/postgresql/data
-      # - ./data/init.sql:/docker-entrypoint-initdb.d/init.sql
-    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-ragdm}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
-  # Backend
+  # Backend Service (Go + CGO + ONNX)
   backend:
     build:
       context: .
-      dockerfile: backend/Dockerfile
+      dockerfile: Dockerfile.backend
     container_name: ragdm_backend
-    ports:
-      - "${APP_PORT}:${APP_PORT}"
-    depends_on:
-      - db
-    environment:
-      - DB_HOST=${DB_HOST}
-      - DB_PORT=5432
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - DB_NAME=${DB_NAME}
-      - GIN_MODE=${GIN_MODE}
     restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "${HTTP_PORT:-8080}:${HTTP_PORT:-8080}"
+    environment:
+      - HTTP_PORT=${HTTP_PORT:-8080}
+      - LOG_LEVEL=${LOG_LEVEL:-debug}
+      - GIN_MODE=${GIN_MODE:-debug}
+      - API_TIMEOUT=${API_TIMEOUT:-5s}
+      - DATABASE_URL=postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:${DB_PORT:-5432}/${DB_NAME:-ragdm}?sslmode=disable
+      - DB_MAX_CONNS=${DB_MAX_CONNS:-20}
+      - DB_MIN_CONNS=${DB_MIN_CONNS:-5}
+      - TOKENIZER_PATH=${TOKENIZER_PATH}
+      - ONNX_MODEL_PATH=${ONNX_MODEL_PATH}
+      - ONNX_LIBRARY_PATH=${ONNX_LIBRARY_PATH}
+    volumes:
+      # Mount ML models from host to container to avoid bloating the image
+      - ./models:/app/models
+      - ./parser/seed_cards.sql:/app/seed_cards.sql:ro
+      - ./frontend:/root/frontend:ro
 
 volumes:
   pgdata:
