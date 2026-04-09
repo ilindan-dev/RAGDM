@@ -24,16 +24,23 @@
         <div class="card">
           <h2>Сервис поиска</h2>
 
-          <div id="chat" class="chat"></div>
+          <form id="search-form">
+            <div class="input-block">
+              <input 
+                type="text" 
+                id="search-input" 
+                placeholder="Введите поисковый запрос..."
+                class="search-input"
+              />
+              <button type="submit" id="search-btn">Найти</button>
+            </div>
+          </form>
 
-          <div id="loader" class="loader hidden">Поиск...</div>
-
-          <div class="input-block">
-            <textarea id="input" placeholder="Введите вопрос..."></textarea>
-            <button id="send">Отправить</button>
-          </div>
+          <div id="loading-indicator" class="loader hidden">Поиск...</div>
+          <div id="search-results" class="search-results"></div>
         </div>
       </section>
+          
 
       <!-- TRAINER -->
       <section id="trainer-tab" class="tab-content">
@@ -42,34 +49,27 @@
 
           <div class="question-card">
             <div class="question-label">Вопрос системы</div>
-            <div id="trainer-question" class="question-text">
-              Что называется полным графом?
+            <div id="question-text" class="question-text">
+              Загрузка вопроса...
             </div>
           </div>
+        </div>
 
+        <form id="answer-form">
           <div class="input-block">
             <textarea
-              id="trainer-answer"
+              id="answer-input"
               placeholder="Введите ваш ответ..."
+              rows="3"
             ></textarea>
-            <button id="check-answer-btn">Проверить</button>
+            <button type="submit" id="submit-answer-btn">Проверить</button>
           </div>
-
-          <div id="trainer-result" class="result-block hidden">
-            <div id="result-status" class="result-status result-status-partial">
-              Частично верно
-            </div>
-
-            <div class="result-percent">
-              Процент совпадения: <span id="result-percent">0%</span>
-            </div>
-
-            <div class="result-explanation-title">Пояснение</div>
-            <div id="result-explanation" class="result-explanation"></div>
-          </div>
+        </form>
+        
+        <div id="feedback" class="feedback-block"></div>
 
           <div class="trainer-actions">
-            <button id="next-question-btn">Далее</button>
+            <button type="button" id="next-question-btn">Следующий вопрос</button>
           </div>
         </div>
       </section>
