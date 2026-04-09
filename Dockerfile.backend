@@ -1,0 +1,54 @@
+# Stage 1: Builder (Build C-core и Go-code)
+FROM golang:1.25-bookworm AS builder
+
+# Install dependencies for building C code
+RUN apt-get update && apt-get install -y cmake build-essential
+
+# Set the working directory
+WORKDIR /app
+
+COPY backend/go.mod backend/go.sum ./backend/
+RUN cd backend && go mod download
+
+# Copy the entire source code
+COPY backend/ ./backend/
+COPY algorithm/ ./algorithm/
+
+# 1. Compile the C library
+RUN cmake -B /app/algorithm/build -S /app/algorithm && \
+    cmake --build /app/algorithm/build
+
+#2. Build the Go binary (enable CGO)
+WORKDIR /app/backend
+RUN apt-get update && \
+    apt-get install -y ca-certificates wget tar && \
+    wget -qO- https://github.com/daulet/tokenizers/releases/download/v1.27.0/libtokenizers.linux-amd64.tar.gz | tar xvz -C /usr/lib/
+
+RUN CGO_ENABLED=1 GOOS=linux go build -ldflags="-s -w" -o /app/bin/server ./cmd/server/main.go
+
+# Stage 2: Runner
+FROM debian:bookworm-slim
+
+# Installing CA certificates
+RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /root/
+
+# 1. Download and copy the ONNX libraries to /usr/local/lib/
+RUN apt-get update && \
+    apt-get install -y ca-certificates wget tar && \
+    wget -qO onnxruntime.tgz https://github.com/microsoft/onnxruntime/releases/download/v1.20.1/onnxruntime-linux-x64-1.20.1.tgz && \
+    tar -xzf onnxruntime.tgz && \
+    cp -Pr onnxruntime-linux-x64-1.20.1/lib/* /usr/local/lib/ && \
+    ldconfig && \
+    rm -rf onnxruntime.tgz onnxruntime-linux-x64-1.20.1
+
+# 2. Add this right after the RUN block to guarantee the app finds the .so file
+ENV LD_LIBRARY_PATH=/usr/local/lib:${LD_LIBRARY_PATH}
+
+COPY --from=builder /app/bin/server .
+COPY --from=builder /app/algorithm/build/libspaced_rep.a /usr/local/lib/
+
+EXPOSE 8080
+
+CMD ["./server"]
