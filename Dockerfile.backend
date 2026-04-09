@@ -21,8 +21,9 @@ RUN cmake -B /app/algorithm/build -S /app/algorithm && \
 #2. Build the Go binary (enable CGO)
 WORKDIR /app/backend
 RUN apt-get update && \
-    apt-get install -y ca-certificates wget tar && \
-    wget -qO- https://github.com/daulet/tokenizers/releases/download/v1.27.0/libtokenizers.linux-amd64.tar.gz | tar xvz -C /usr/lib/
+    apt-get install -y ca-certificates wget tar
+
+RUN wget -O- https://github.com/daulet/tokenizers/releases/download/v1.27.0/libtokenizers.linux-amd64.tar.gz | tar xvz -C /usr/lib/
 
 RUN CGO_ENABLED=1 GOOS=linux go build -ldflags="-s -w" -o /app/bin/server ./cmd/server/main.go
 
