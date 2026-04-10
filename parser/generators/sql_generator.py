@@ -6,11 +6,7 @@ def escape_sql_string(s: str) -> str:
     return s.replace("'", "''")
 
 def generate_seed_sql(cards: List[Dict[str, Any]], output_file: str) -> None:
-    """Создает SQL файл ТОЛЬКО с INSERT запросами, подходящий под архитектуру Go."""
-    
-    insert_header = (
-        "INSERT INTO card_contents (front_text, back_text, embedding, source_info) VALUES\n"
-    )
+    insert_header = "INSERT INTO card_contents (front_text, back_text, embedding, source_info) VALUES\n"
 
     with open(output_file, "w", encoding="utf-8") as f:
         f.write("-- Автоматически сгенерированный seed-файл (Теоремы и Термины)\n")
@@ -32,7 +28,6 @@ def generate_seed_sql(cards: List[Dict[str, Any]], output_file: str) -> None:
 
         for card in cards:
             emb_str = "[" + ",".join(map(str, card["embedding"])) + "]"
-            
             row = (
                 f"('{escape_sql_string(card['front'])}', "
                 f"'{escape_sql_string(card['back'])}', "
@@ -48,4 +43,4 @@ def generate_seed_sql(cards: List[Dict[str, Any]], output_file: str) -> None:
         flush_batch()
 
     print(f"\nУспех! Сгенерирован файл {output_file}.")
-    print(f"Всего создано качественных карточек: {count} (SQL-вставок: {statements}).")
+    print(f"Всего создано карточек: {count} (SQL-вставок: {statements}).")

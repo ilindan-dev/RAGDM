@@ -1,5 +1,5 @@
-"""PDF extraction and text processing module."""
+"""PDF extraction module."""
 
-from .pdf_extractor import parse_hall_text
+from .pdf_extractor import extract_text_from_pdf
 
-__all__ = ["parse_hall_text"]
+__all__ = ["extract_text_from_pdf"]

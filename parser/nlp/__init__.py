@@ -1,6 +1,5 @@
-"""NLP processing module for text cleaning and keyword extraction."""
+"""NLP processing module for extracting theorems and terms."""
 
-from .text_processor import filter_text, split_into_blocks
-from .keyword_extractor import extract_keywords
+from .processor import parse_theorems_and_terms
 
-__all__ = ["filter_text", "split_into_blocks", "extract_keywords"]
+__all__ = ["parse_theorems_and_terms"]
