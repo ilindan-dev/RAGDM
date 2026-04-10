@@ -1,84 +1,84 @@
-"""
-Main parser module orchestrating the RAG pipeline.
-Combines PDF extraction, NLP processing, and SQL data generation.
-"""
+import re
+from typing import List, Dict, Any
 
-from typing import Generator, Dict, Any, Optional, List
-from extractors import parse_hall_text
-from nlp import filter_text, split_into_blocks, extract_keywords
-from generators import generate_sql
+def parse_theorems_and_terms(text: str, chapter_name: str, model) -> List[Dict[str, Any]]:
+    cards = []
+    lines = [line.strip() for line in text.split('\n') if line.strip()]
 
+    # --- ШАГ 1: Поиск теорем, лемм и доказательств (State Machine) ---
+    state = "NORMAL"
+    front_buf = []
+    back_buf = []
+    
+    # Маркеры, которые могут прервать доказательство, если нет квадратика (□)
+    stop_markers = ("Теорема", "Лемма", "Следствие", "Пример", "Замечание", "Определение", "Алгоритм", "1.", "2.")
 
-def prepare_text_for_rag(
-    pdf_path: str,
-    model: Any,
-    chapter_name: str = "unknown",
-    start_page: int = 1,
-    end_page: Optional[int] = None,
-) -> Generator[Dict[str, Any], None, None]:
-    """Complete RAG pipeline: extraction → cleaning → blocking → embeddings.
+    for line in lines:
+        is_theorem_start = any(line.startswith(m) for m in ("Теорема.", "Теорема ", "Лемма.", "Лемма ", "Следствие.", "Следствие "))
+        
+        if is_theorem_start:
+            if state in ["THEOREM", "PROOF"] and front_buf and back_buf:
+                cards.append({"front": " ".join(front_buf), "back": "\n".join(back_buf), "type": "Теорема/Доказательство"})
+            
+            state = "THEOREM"
+            front_buf = [line]
+            back_buf = []
+            
+        elif line.startswith("Доказательство.") or line.startswith("Обоснование."):
+            if state == "THEOREM":
+                state = "PROOF"
+            back_buf.append(line)
+            
+        elif state == "THEOREM":
+            front_buf.append(line)
+            
+        elif state == "PROOF":
+            back_buf.append(line)
+            # Конец доказательства
+            if line.endswith("□") or line.endswith("■"):
+                cards.append({"front": " ".join(front_buf), "back": "\n".join(back_buf), "type": "Теорема/Доказательство"})
+                state = "NORMAL"
+                front_buf, back_buf = [], []
+        else:
+            # Прерываем, если начался новый раздел, а квадратика не было
+            if state == "PROOF" and any(line.startswith(m) for m in stop_markers):
+                cards.append({"front": " ".join(front_buf), "back": "\n".join(back_buf), "type": "Теорема/Доказательство"})
+                state = "NORMAL"
+                front_buf, back_buf = [], []
 
-    Processes PDF document through complete pipeline including text extraction,
-    cleaning, block identification, keyword extraction, and embedding generation
-    for both individual terms and full text blocks.
+    # Сохраняем последний буфер, если документ закончился на доказательстве
+    if state in ["THEOREM", "PROOF"] and front_buf and back_buf:
+         cards.append({"front": " ".join(front_buf), "back": "\n".join(back_buf), "type": "Теорема/Доказательство"})
 
-    Args:
-        pdf_path: Path to the PDF file.
-        model: Sentence Transformer model for encoding text and terms.
-        chapter_name: Identifier for the chapter/document. Defaults to 'unknown'.
-        start_page: Starting page number (1-indexed). Defaults to 1.
-        end_page: Ending page number (inclusive). If None, processes all pages.
-
-    Yields:
-        Dictionary with keys:
-        - chapter_name (str): Document identifier.
-        - terms (List[str]): Original term forms from text.
-        - definitions (List[str]): Context/definition text for each term.
-        - chunk_text (str): Full text block.
-        - terms_embeddings (List[List[float]]): Embeddings of normalized terms.
-        - chunk_embedding (List[float]): Embedding of full chunk.
-    """
-    chunks = parse_hall_text(pdf_path, start_page, end_page)
-
-    for chunk in chunks:
-        cleaned = filter_text(chunk["text"])
-        if not cleaned.strip():
+    # --- ШАГ 2: Поиск Терминов (Regex по предложениям) ---
+    full_text = " ".join(lines)
+    # Бьем на предложения
+    sentences = re.split(r'(?<=[.!?])\s+', full_text)
+    
+    for sentence in sentences:
+        sentence = sentence.strip()
+        if len(sentence) < 15 or sentence.startswith("Теорема") or sentence.startswith("Лемма"): 
             continue
 
-        blocks = split_into_blocks(cleaned)
+        # Паттерн 1: [Термин] — это [Определение]
+        match_eto = re.search(r'^(.{2,60}?)\s*—\s*это\s+(.+)$', sentence)
+        if match_eto:
+            term = match_eto.group(1).strip()
+            cards.append({"front": f"Термин: {term}", "back": sentence, "type": "Термин"})
+            continue
 
-        for block in blocks:
-            block_text = block["text"]
-            if not block_text.strip():
-                continue
+        # Паттерн 2: [Определение] называется [Термином]
+        match_naz = re.search(r'(.+?)\s+называ(?:ет)?ся\s+([^.]+)', sentence)
+        if match_naz:
+            term = match_naz.group(2).strip()
+            cards.append({"front": f"Термин: {term}", "back": sentence, "type": "Термин"})
 
-            # Extract keywords (original and normalized forms)
-            keyword_pairs = extract_keywords(block_text)
+    # --- ШАГ 3: Генерация Эмбеддингов ---
+    print(f"Генерация векторов для {len(cards)} карточек...")
+    for card in cards:
+        # Для лучшего поиска векторизуем и вопрос, и ответ вместе
+        text_to_embed = f"{card['front']} {card['back']}"
+        card["embedding"] = model.encode(text_to_embed).tolist()
+        card["source_info"] = f"{chapter_name} | {card['type']}"
 
-            # Separate original and normalized terms
-            terms_original: List[str] = [orig for orig, norm in keyword_pairs]
-            terms_normalized: List[str] = [norm for orig, norm in keyword_pairs]
-
-            # Generate embeddings for each normalized term
-            terms_embeddings: List[List[float]] = []
-            for norm_term in terms_normalized:
-                term_embedding = model.encode(norm_term).tolist()
-                terms_embeddings.append(term_embedding)
-
-            # Generate embedding for entire chunk
-            chunk_embedding: List[float] = model.encode(block_text).tolist()
-
-            # Use full block text as definition context for each term
-            definitions: List[str] = [block_text] * len(terms_original)
-
-            yield {
-                "chapter_name": chapter_name,
-                "terms": terms_original,
-                "definitions": definitions,
-                "chunk_text": block_text,
-                "terms_embeddings": terms_embeddings,
-                "chunk_embedding": chunk_embedding,
-            }
-
-
-__all__ = ["prepare_text_for_rag", "generate_sql"]
+    return cards

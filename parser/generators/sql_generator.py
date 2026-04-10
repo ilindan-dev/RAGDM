@@ -1,124 +1,23 @@
-"""SQL generation and data formatting for database initialization."""
-
-from typing import Dict, Any, List
+from typing import List, Dict, Any
 
 INSERT_VALUES_PER_STATEMENT = 50
 
-
 def escape_sql_string(s: str) -> str:
-    """Escape single quotes in SQL string values.
-
-    Args:
-        s: String to escape.
-
-    Returns:
-        String with single quotes escaped for SQL.
-    """
     return s.replace("'", "''")
 
-
-def format_insert_values_rows(item: Dict[str, Any]) -> List[str]:
-    """Format data items as multiple SQL VALUES rows (one per term).
-
-    Converts extracted terms and their embeddings into individual card_contents
-    records. Each term becomes a separate flashcard with its definition and
-    embedding.
-
-    Args:
-        item: Dictionary with keys: chapter_name, terms, definitions,
-              chunk_text, terms_embeddings.
-
-    Returns:
-        List of SQL VALUES rows, one per extracted term.
-    """
-    rows = []
-
-    # Iterate through terms and create a card for each
-    for term, definition, embedding in zip(
-        item["terms"], item["definitions"], item["terms_embeddings"], strict=False
-    ):
-        # Format embedding as PostgreSQL vector
-        embedding_str = "[" + ",".join(map(str, embedding)) + "]"
-
-        # Create source info: chapter + chunk context
-        source_info = f"{item['chapter_name']}|{item['chunk_text'][:200]}"
-
-        row = (
-            f"('{escape_sql_string(term)}', "
-            f"'{escape_sql_string(definition[:500])}', "
-            f"'{embedding_str}', "
-            f"'{escape_sql_string(source_info)}')"
-        )
-        rows.append(row)
-
-    return rows
-
-
-def generate_sql(data_generator: Any, output_file: str = "init.sql") -> None:
-    """Generate SQL initialization script with DDL and batch INSERT statements.
-
-    Creates a PostgreSQL initialization script containing table creation
-    (with vector extension) and batch INSERT statements for card_contents and
-    card_progress tables. Batches are sized for optimal performance.
-
-    Args:
-        data_generator: Generator/iterable yielding data dictionaries.
-        output_file: Path where SQL script will be written. Defaults to 'init.sql'.
-
-    Returns:
-        None. Writes directly to output_file.
-    """
-    init_script = [
-        "-- RAG Flashcard Schema",
-        'CREATE EXTENSION IF NOT EXISTS "uuid-ossp";',
-        "CREATE EXTENSION IF NOT EXISTS vector;",
-        "",
-        "-- Table: card_contents",
-        "-- Stores individual terms with embeddings and source context",
-        "CREATE TABLE IF NOT EXISTS card_contents (",
-        "    id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),",
-        "    front_text  TEXT NOT NULL,",
-        "    back_text   TEXT NOT NULL,",
-        "    embedding   vector(384),",
-        "    source_info TEXT,",
-        "    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()",
-        ");",
-        "",
-        "-- HNSW index for similarity search",
-        "CREATE INDEX ON card_contents USING hnsw (embedding vector_cosine_ops);",
-        "",
-        "-- Table: card_progress",
-        "-- Tracks spaced repetition metrics for each card",
-        "CREATE TABLE IF NOT EXISTS card_progress (",
-        "    id             UUID PRIMARY KEY DEFAULT uuid_generate_v4(),",
-        "    card_id        UUID NOT NULL UNIQUE",
-        "                   REFERENCES card_contents (id)",
-        "                   ON DELETE CASCADE,",
-        "    interval       BIGINT NOT NULL DEFAULT 0,",
-        "    easiness       REAL NOT NULL DEFAULT 2.5,",
-        "    repetitions    INT NOT NULL DEFAULT 0,",
-        "    next_review_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),",
-        "    updated_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()",
-        ");",
-        "",
-        "CREATE INDEX IF NOT EXISTS idx_progress_next_review",
-        "ON card_progress (next_review_at);",
-        "",
-        f"-- Data: each INSERT contains up to {INSERT_VALUES_PER_STATEMENT} rows.",
-        "",
-    ]
-
+def generate_seed_sql(cards: List[Dict[str, Any]], output_file: str) -> None:
+    """Создает SQL файл ТОЛЬКО с INSERT запросами, подходящий под архитектуру Go."""
+    
     insert_header = (
-        "INSERT INTO card_contents "
-        "(front_text, back_text, embedding, source_info) VALUES\n"
+        "INSERT INTO card_contents (front_text, back_text, embedding, source_info) VALUES\n"
     )
 
     with open(output_file, "w", encoding="utf-8") as f:
-        for line in init_script:
-            f.write(line + "\n")
+        f.write("-- Автоматически сгенерированный seed-файл (Теоремы и Термины)\n")
+        f.write("-- Триггер trigger_init_card_progress автоматически создаст записи в card_progress!\n\n")
 
-        count = 0
         batch = []
+        count = 0
         statements = 0
 
         def flush_batch():
@@ -129,24 +28,24 @@ def generate_sql(data_generator: Any, output_file: str = "init.sql") -> None:
             f.write(",\n".join(batch))
             f.write(";\n\n")
             statements += 1
-            batch = []
+            batch.clear()
 
-        for item in data_generator:
-            # Each item can produce multiple rows (one per term)
-            rows = format_insert_values_rows(item)
-            for row in rows:
-                count += 1
-                batch.append(row)
+        for card in cards:
+            emb_str = "[" + ",".join(map(str, card["embedding"])) + "]"
+            
+            row = (
+                f"('{escape_sql_string(card['front'])}', "
+                f"'{escape_sql_string(card['back'])}', "
+                f"'{emb_str}', "
+                f"'{escape_sql_string(card['source_info'])}')"
+            )
+            batch.append(row)
+            count += 1
 
-                if len(batch) >= INSERT_VALUES_PER_STATEMENT:
-                    flush_batch()
-
-            if count % 100 == 0:
-                print(f"Processed and written {count} flashcards to SQL...")
+            if len(batch) >= INSERT_VALUES_PER_STATEMENT:
+                flush_batch()
 
         flush_batch()
 
-    print(
-        f"SQL script generated successfully: {output_file}. "
-        f"Total flashcards: {count}, INSERT statements: {statements}"
-    )
+    print(f"\nУспех! Сгенерирован файл {output_file}.")
+    print(f"Всего создано качественных карточек: {count} (SQL-вставок: {statements}).")
