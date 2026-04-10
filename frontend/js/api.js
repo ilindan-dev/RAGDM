@@ -1,5 +1,5 @@
 // API Base URL (relative path for container compatibility)
-const API_BASE = 'api/v1';
+const API_BASE = '/api/v1';
 
 // Helper function for API calls with error handling
 async function apiCall(url, options = {}) {
