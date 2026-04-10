@@ -80,6 +80,8 @@ func main() {
 		logger.Fatal().Err(err).Msg("Failed to create embedded tokenizer")
 	}
 
+	defer embeder.Close()
+
 	cardService := service.NewCardService(cardRepo, algoEngine, embeder, &logger)
 
 	cardHandler := http.NewHandler(cardService, &logger)

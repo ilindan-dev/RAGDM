@@ -34,7 +34,7 @@ func NewOnnxEmbedder(tokenizerPath, onnxModelPath, onnxLibraryPath string, log *
 	}
 
 	inputNames := []string{"input_ids", "attention_mask", "token_type_ids"}
-	outputNames := []string{"embeddings"}
+	outputNames := []string{"last_hidden_state"}
 
 	session, err := ort.NewDynamicAdvancedSession(
 		onnxModelPath,
@@ -128,8 +128,9 @@ func (e *OnnxEmbedder) Encode(text string) ([]float32, error) {
 		}
 	}(typeIDsTensor)
 
-	outShape := ort.NewShape(1, 384)
-	outData := make([]float32, 384)
+	outShape := ort.NewShape(1, seqLen, 384)
+	outData := make([]float32, seqLen*384)
+
 	outTensor, err := ort.NewTensor(outShape, outData)
 	if err != nil {
 		return nil, err
@@ -149,7 +150,19 @@ func (e *OnnxEmbedder) Encode(text string) ([]float32, error) {
 		return nil, fmt.Errorf("ONNX inference failed: %w", err)
 	}
 
-	return outData, nil
+	pooled := make([]float32, 384)
+
+	for i := int64(0); i < seqLen; i++ {
+		for j := int64(0); j < 384; j++ {
+			pooled[j] += outData[i*384+j]
+		}
+	}
+
+	for j := 0; j < 384; j++ {
+		pooled[j] /= float32(seqLen)
+	}
+
+	return pooled, nil
 }
 
 func (e *OnnxEmbedder) CosineSimilarity(v1, v2 []float32) float32 {
