@@ -43,9 +43,26 @@ CREATE TABLE IF NOT EXISTS card_progress
 -- B-Tree index to efficiently fetch cards that are due for review.
 CREATE INDEX IF NOT EXISTS idx_progress_next_review ON card_progress (next_review_at);
 
+-- +goose StatementBegin
+CREATE OR REPLACE FUNCTION init_card_progress()
+    RETURNS TRIGGER AS $$
+BEGIN
+    INSERT INTO card_progress (card_id, interval, easiness, repetitions, next_review_at)
+    VALUES (NEW.id, 0, 2.5, 0, NOW());
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_init_card_progress
+    AFTER INSERT ON card_contents
+    FOR EACH ROW
+EXECUTE FUNCTION init_card_progress();
+-- +goose StatementEnd
+
 -- +goose Down
 
 DROP TABLE IF EXISTS card_progress;
 DROP TABLE IF EXISTS card_contents;
 DROP EXTENSION IF EXISTS vector;
 DROP EXTENSION IF EXISTS "uuid-ossp";
+DROP FUNCTION IF EXISTS init_card_progress();
