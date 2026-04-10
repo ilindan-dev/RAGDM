@@ -3,80 +3,121 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>RAGDM</title>
-  <link rel="stylesheet" href="css/style.css" />
+  <title>RAGDM - Дискретная математика</title>
+  <link rel="stylesheet" href="/css/style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet" />
 </head>
 <body>
   <div class="app">
     <header class="header">
-      <h1>RAG по дискретной математике</h1>
-      <p class="subtitle">Локальный сервис поиска и тренировки</p>
+      <div class="container">
+        <h1>RAG по дискретной математике</h1>
+        <p class="subtitle">Локальный сервис поиска и тренировки </p>
+      </div>
     </header>
 
     <nav class="tabs">
-      <button class="tab-button active" data-tab="search">Поиск по учебнику</button>
-      <button class="tab-button" data-tab="trainer">Тренажёр</button>
+      <div class="container">
+        <button class="tab-button active" data-tab="search">
+          Поиск по учебнику
+        </button>
+        <button class="tab-button" data-tab="trainer">
+          Тренажёр 
+        </button>
+      </div>
     </nav>
 
-    <main>
-      <!-- SEARCH -->
+    <main class="container">
+      <!-- SEARCH TAB -->
       <section id="search-tab" class="tab-content active">
-        <div class="card">
-          <h2>Сервис поиска</h2>
-
-          <form id="search-form">
-            <div class="input-block">
-              <input 
-                type="text" 
+        <div class="chat-container">
+          <div class="chat-messages" id="chat-messages">
+            <div class="message bot">
+              <div class="message-avatar">🤖</div>
+              <div class="message-content">
+                <p>Привет! Я помогу найти нужную информацию в учебнике по дискретной математике. Задай свой вопрос в поле ниже.</p>
+              </div>
+            </div>
+          </div>
+          
+          <form id="search-form" class="chat-input-form">
+            <div class="input-group">
+              <textarea 
                 id="search-input" 
-                placeholder="Введите поисковый запрос..."
-                class="search-input"
-              />
-              <button type="submit" id="search-btn">Найти</button>
+                placeholder="Введите ваш вопрос по дискретной математике..."
+                rows="2"
+              ></textarea>
+              <button type="submit" id="search-btn">
+                <span class="btn-text">Отправить</span>
+              </button>
             </div>
           </form>
-
-          <div id="loading-indicator" class="loader hidden">Поиск...</div>
-          <div id="search-results" class="search-results"></div>
         </div>
       </section>
-          
 
-      <!-- TRAINER -->
+      <!-- TRAINER TAB -->
       <section id="trainer-tab" class="tab-content">
-        <div class="card">
-          <h2>Тренажёр</h2>
-
+        <div class="trainer-container">
+          <!-- Question Card -->
           <div class="question-card">
-            <div class="question-label">Вопрос системы</div>
+            <div class="question-header">
+              <span class="question-badge">Вопрос системы</span>
+              <span class="card-number" id="card-number">Карточка #1</span>
+            </div>
             <div id="question-text" class="question-text">
               Загрузка вопроса...
             </div>
           </div>
-        </div>
 
-        <form id="answer-form">
-          <div class="input-block">
+          <!-- Answer Form -->
+          <form id="answer-form" class="answer-form">
+            <label class="form-label">Ваш ответ:</label>
             <textarea
               id="answer-input"
-              placeholder="Введите ваш ответ..."
-              rows="3"
+              placeholder="Введите ваш ответ здесь..."
+              rows="4"
             ></textarea>
-            <button type="submit" id="submit-answer-btn">Проверить</button>
-          </div>
-        </form>
-        
-        <div id="feedback" class="feedback-block"></div>
+            <button type="submit" id="submit-answer-btn" class="btn-primary">
+              Проверить ответ
+            </button>
+          </form>
 
+          <!-- Result Block -->
+          <div id="result-block" class="result-block hidden">
+            <div class="result-header">
+              <h3 id="result-title">Результат проверки</h3>
+            </div>
+            <div class="result-similarity">
+              <span class="similarity-label">Совпадение с эталоном:</span>
+              <span class="similarity-value" id="similarity-value">0%</span>
+              <div class="similarity-bar">
+                <div class="similarity-fill" id="similarity-fill" style="width: 0%"></div>
+              </div>
+            </div>
+            <div class="result-explanation">
+              <div class="explanation-label">Эталонный текст из учебника:</div>
+              <div class="explanation-text" id="explanation-text"></div>
+            </div>
+          </div>
+
+          <!-- Next Question Button -->
           <div class="trainer-actions">
-            <button type="button" id="next-question-btn">Следующий вопрос</button>
+            <button type="button" id="next-question-btn" class="btn-secondary">
+              Следующий вопрос
+            </button>
           </div>
         </div>
       </section>
     </main>
   </div>
 
-  <script src="js/api.js"></script>
-  <script src="js/main.js"></script>
+  <!-- Loading Spinner Template -->
+  <div id="loading-overlay" class="loading-overlay hidden">
+    <div class="spinner"></div>
+    <p>Обработка запроса...</p>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/main.js"></script>
 </body>
 </html>
