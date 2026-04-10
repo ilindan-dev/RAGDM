@@ -202,7 +202,6 @@ function displayResult(similarity) {
   const resultBlock = document.getElementById('result-block');
   const similarityValue = document.getElementById('similarity-value');
   const similarityFill = document.getElementById('similarity-fill');
-  // Убрана переменная resultIcon
   const resultTitle = document.getElementById('result-title');
   const explanationText = document.getElementById('explanation-text');
   
