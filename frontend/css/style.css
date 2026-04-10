@@ -217,3 +217,65 @@ button {
 .trainer-actions {
   margin-top: 16px;
 }
+
+.similarity-bar {
+    width: 100%;
+    height: 12px;
+    background-color: #e5e7eb;
+    border-radius: 999px;
+    overflow: hidden;
+    margin-top: 10px;
+}
+
+.similarity-fill {
+    height: 100%;
+    background-color: var(--success);
+    transition: width 0.4s ease, background-color 0.4s ease;
+}
+
+.similarity-label {
+    font-weight: 600;
+    margin-right: 8px;
+}
+
+.similarity-value {
+    font-weight: 700;
+    color: #374151;
+}
+
+.chat-container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.chat-messages {
+    min-height: 250px;
+    max-height: 400px;
+    overflow-y: auto;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.input-group {
+    display: flex;
+    gap: 12px;
+}
+
+.input-group textarea {
+    flex-grow: 1;
+    border: 1px solid #d1d5db;
+    border-radius: 10px;
+    padding: 12px;
+    font-family: inherit;
+}
+
+.input-group button {
+    white-space: nowrap;
+    padding: 0 24px;
+}
